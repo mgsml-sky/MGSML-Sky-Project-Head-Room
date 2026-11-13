@@ -244,7 +244,6 @@
             <button class="action-btn signup-theme" onclick="openModal('signup-modal')">Sign Up</button>
         </div>
 
-        <!-- Clickable Profile Pill for Toggle Popup Modal -->
         <div id="userProfilePill" class="user-profile-pill" onclick="openProfileDetailsModal()" title="Click to view full details">
             🪙 <span id="navSkyBal">0</span> <span id="navTokenName">SKY</span> ▼
         </div>
@@ -256,6 +255,7 @@
 
     <div class="floating-workspace" id="floatingWorkspace"></div>
 
+    <!-- ENTER HOME FOOTER LINKED WITH DASHBOARD LINK -->
     <div class="enter-home-footer" onclick="handleEnterHomeClick()">
         ✨ Enter Home / Inter Home ✨
     </div>
@@ -346,23 +346,6 @@
         </div>
     </div>
 
-    <!-- SETTINGS MODAL WITH AUDIO MUTE/UNMUTE -->
-    <div id="settings-modal" class="modal-overlay">
-        <div class="modal-box">
-            <button class="modal-close" onclick="closeModal('settings-modal')">✕</button>
-            <h3 style="color: var(--primary-sky); margin-top:0;">⚙️ System Settings</h3>
-            <p style="font-size: 11px; color: #9ca3af;">Manage your global app preferences and background audio here.</p>
-            
-            <div style="background:#030712; padding:12px; border-radius:8px; border:1px solid #1f2937; display:flex; flex-direction:column; gap:10px; font-size:12px; margin-top:10px;">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <span>Background Splash Audio:</span>
-                    <button class="action-btn" style="padding:6px 10px; font-size:10px;" onclick="toggleAudioMute(this)">Mute / Unmute</button>
-                </div>
-            </div>
-            <button class="action-btn signup-theme" style="width:100%; margin-top:15px;" onclick="closeModal('settings-modal')">Save & Close</button>
-        </div>
-    </div>
-
     <!-- MASTER ADMIN CMS MODAL -->
     <div id="admin-panel-modal" class="modal-overlay">
         <div class="modal-box" style="max-width:650px;">
@@ -380,7 +363,7 @@
             <p style="font-size:12px; font-weight:bold; color:var(--accent-green);">Select Active Sign-Up Bonus Token (Choose 1) & Set Amount:</p>
             <div id="admin-tokens-container" style="max-height:220px; overflow-y:auto; display:flex; flex-direction:column; gap:6px; margin-bottom:15px; background:#030712; padding:10px; border-radius:6px; border:1px solid #1f2937;"></div>
 
-            <p style="font-size:12px; font-weight:bold; color:var(--primary-sky);">GitHub Links for 14 Preview Buttons (Each has individual Save button):</p>
+            <p style="font-size:12px; font-weight:bold; color:var(--primary-sky);">GitHub Links for 14 Preview Buttons & Dashboard Home (Each has individual Save button):</p>
             <div id="admin-links-container" style="max-height:280px; overflow-y:auto; display:flex; flex-direction:column; gap:8px;"></div>
         </div>
     </div>
@@ -469,6 +452,7 @@
                         openProfileDetailsModal();
                         return;
                     }
+                    // 14 টা বোতামের জন্য আগের নিয়ম অনুযায়ী ওয়েলকাম মেসেজ দেখাবে
                     alert("Welcome to MGSML Sky Project - " + btnName);
                 };
                 workspace.appendChild(pill);
@@ -487,13 +471,11 @@
             }
         }
 
-        // Updated Admin Password Verification (Forced to accept "1234" as primary default password)
         async function verifyAdminPassword(inputElem) {
             if (isLockedOut) return;
             const enteredPass = inputElem.value.trim();
             if (enteredPass.length < 4) return;
 
-            // Direct check for 1234 first so it works immediately
             if (enteredPass === "1234") {
                 inputElem.value = '';
                 failedAttempts = 0;
@@ -644,6 +626,7 @@
             } catch (err) {}
         }
 
+        // ONLY "Enter Home / Inter Home" Footer Button uses Admin CMS "Dashboard Home" link engine
         async function handleEnterHomeClick() {
             const activeUserId = localStorage.getItem('mgsml_active_user');
 
@@ -654,27 +637,15 @@
             }
 
             try {
-                const doc = await db.collection("users").doc(activeUserId).get();
-                if (!doc.exists) {
-                    alert("Please Sign Up First!");
-                    openModal('signup-modal');
-                    return;
+                let targetUrl = (adminData.links && adminData.links["Dashboard Home"]) ? adminData.links["Dashboard Home"].trim() : '';
+                
+                if (targetUrl && targetUrl.startsWith('http')) {
+                    const separator = targetUrl.includes('?') ? '&' : '?';
+                    targetUrl = `${targetUrl}${separator}uid=${activeUserId}`;
+                    window.open(targetUrl, '_blank');
+                } else {
+                    alert("Dashboard Home link is not configured in Admin CMS yet!");
                 }
-
-                const userData = doc.data();
-                const lastActive = userData.lastActive ? new Date(userData.lastActive) : new Date(userData.createdAt || Date.now());
-                const now = new Date();
-                const diffDays = (now - lastActive) / (1000 * 60 * 60 * 24);
-
-                if (diffDays >= 1) {
-                    alert("Please Sign In First!");
-                    openModal('signin-modal');
-                    return;
-                }
-
-                alert("Welcome to MGSML Sky Project Dashboard Home!");
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-
             } catch (err) {
                 alert("Please Sign Up First!");
                 openModal('signup-modal');
@@ -875,7 +846,7 @@
                         const bal = getTokenBalance(data, token);
                         const row = document.createElement('div');
                         row.className = 'wallet-badge-row';
-                        row.innerHTML = `<span>🪙 <strong>${token}:</strong></span><span style="color:var(--accent-green); font-weight:900;">${bal}</span>`;
+                        row.innerHTML = `🪙 <strong>${token}:</strong> <span style="color:var(--accent-green); font-weight:900;">${bal}</span>`;
                         tokensContainer.appendChild(row);
                     });
 
@@ -897,17 +868,6 @@
                 alert(`Password reset link sent successfully to ${email}. Check your inbox!`);
                 closeModal('forgot-modal');
             } catch (err) { alert('Error sending reset link: ' + err.message); }
-        }
-
-        function toggleAudioMute(btn) {
-            const audio = document.getElementById('splashAudio');
-            if(audio.muted) {
-                audio.muted = false;
-                alert("Splash Audio Unmuted");
-            } else {
-                audio.muted = true;
-                alert("Splash Audio Muted");
-            }
         }
 
         async function checkActiveSession() {
