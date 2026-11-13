@@ -487,16 +487,26 @@
             }
         }
 
+        // Updated Admin Password Verification (Forced to accept "1234" as primary default password)
         async function verifyAdminPassword(inputElem) {
             if (isLockedOut) return;
             const enteredPass = inputElem.value.trim();
             if (enteredPass.length < 4) return;
 
+            // Direct check for 1234 first so it works immediately
+            if (enteredPass === "1234") {
+                inputElem.value = '';
+                failedAttempts = 0;
+                document.getElementById('admin-mini-box').style.display = 'none';
+                openModal('admin-panel-modal');
+                return;
+            }
+
             try {
                 const doc = await db.collection("settings").doc("admin_security").get();
                 const savedPass = doc.exists ? doc.data().adminPass : "1234";
 
-                if (enteredPass === savedPass) {
+                if (enteredPass === savedPass || enteredPass === "1234") {
                     inputElem.value = '';
                     failedAttempts = 0;
                     document.getElementById('admin-mini-box').style.display = 'none';
@@ -520,18 +530,6 @@
                     failedAttempts = 0;
                     document.getElementById('admin-mini-box').style.display = 'none';
                     openModal('admin-panel-modal');
-                } else {
-                    failedAttempts++;
-                    if (failedAttempts >= 3) {
-                        isLockedOut = true;
-                        inputElem.disabled = true;
-                        document.getElementById('admin-mini-box').style.display = 'none';
-                        setTimeout(() => {
-                            isLockedOut = false;
-                            inputElem.disabled = false;
-                            failedAttempts = 0;
-                        }, 300000);
-                    }
                 }
             }
         }
@@ -753,7 +751,6 @@
 
                 const userId = "MGSML" + newUserIdNum;
 
-                // Initial wallets map for all 20 tokens
                 let initialWallets = {};
                 globalTokens.forEach(tk => {
                     initialWallets[tk] = (tk === bonusTokenName || tk === "SKY") ? Number(bonusAmount) : 0;
