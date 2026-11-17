@@ -211,6 +211,25 @@
             z-index: 20000; padding: 0; box-sizing: border-box;
             align-items: center; justify-content: center;
         }
+
+        /* BROADCAST POPUP STYLING (400-500px Floating Card with Drop-in Words & Shadow) */
+        .broadcast-card {
+            background: linear-gradient(135deg, #0f172a, #111827, #1e293b);
+            border: 2.5px solid var(--primary-sky);
+            box-shadow: 0 0 40px rgba(56, 189, 248, 0.5), inset 0 0 20px rgba(56, 189, 248, 0.2);
+            width: 90%; max-width: 450px; min-height: 280px; max-height: 85vh;
+            border-radius: 16px; padding: 25px; box-sizing: border-box;
+            display: flex; flex-direction: column; justify-content: space-between; align-items: center;
+            text-align: center; position: relative; overflow: hidden;
+        }
+        .broadcast-word {
+            display: inline-block; opacity: 0; transform: translateY(-30px);
+            animation: dropWord 0.4s forwards; font-weight: 700; text-shadow: 0 2px 8px rgba(0,0,0,0.6);
+            margin-right: 5px;
+        }
+        @keyframes dropWord {
+            to { opacity: 1; transform: translateY(0); }
+        }
     </style>
 </head>
 <body>
@@ -226,6 +245,17 @@
         <audio id="splashAudio" autoplay>
             <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg">
         </audio>
+    </div>
+
+    <!-- BROADCAST POPUP MODAL (Appears after splash screen) -->
+    <div id="broadcast-modal" class="modal-overlay">
+        <div class="broadcast-card">
+            <h3 style="color: var(--primary-sky); margin-top:0; font-size:18px; text-transform:uppercase; text-shadow: 0 0 15px rgba(56,189,248,0.8);">📢 MGSML Broadcast Notice</h3>
+            <div id="broadcast-content-area" style="font-size:14px; color:#f1f5f9; line-height:1.6; margin:15px 0; max-height:180px; overflow-y:auto; width:100%;">
+                <!-- Dynamic dropped words will appear here -->
+            </div>
+            <button class="action-btn signup-theme" style="width:100%; padding:10px; font-size:12px;" onclick="closeBroadcastModal()">Got It / Enter App</button>
+        </div>
     </div>
 
     <div class="scenery-background theme-morning" id="sceneryContainer">
@@ -320,13 +350,14 @@
         </div>
     </div>
 
-    <!-- SIGN-IN MODAL -->
+    <!-- SIGN-IN MODAL (With Auto User ID Preview) -->
     <div id="signin-modal" class="modal-overlay">
         <div class="modal-box">
             <button class="modal-close" onclick="closeModal('signin-modal')">✕</button>
             <h3 style="color: var(--primary-sky); margin-top:0;">🔐 Secure Sign-In</h3>
-            <p style="font-size: 11px; color: #9ca3af;">Enter your registered Gmail or User ID.</p>
-            <input type="text" id="si-identifier" class="custom-input" placeholder="Gmail Address or User ID (e.g. MGSML2000)">
+            <p style="font-size: 11px; color: #9ca3af;">Type your Gmail and your User ID will appear automatically.</p>
+            <input type="text" id="si-identifier" class="custom-input" placeholder="Gmail Address or User ID" oninput="lookupUserIdByEmail(this.value, 'si-id-preview')">
+            <div id="si-id-preview" style="font-size:11px; font-weight:bold; color:var(--accent-green); margin:-4px 0 6px 2px;"></div>
             <input type="password" id="si-password" class="custom-input" placeholder="Password">
             <button class="action-btn" style="width:100%; margin-top:10px;" onclick="processSignIn()">Sign In to Dashboard</button>
             <div style="text-align: right; margin-top: 10px;">
@@ -335,22 +366,23 @@
         </div>
     </div>
 
-    <!-- FORGOT PASSWORD MODAL -->
+    <!-- FORGOT PASSWORD MODAL (With Auto User ID Preview) -->
     <div id="forgot-modal" class="modal-overlay">
         <div class="modal-box">
             <button class="modal-close" onclick="closeModal('forgot-modal')">✕</button>
             <h3 style="color: var(--gold); margin-top:0;">🔄 Reset Password</h3>
-            <p style="font-size: 11px; color: #9ca3af;">Enter your registered Gmail to receive a password reset link.</p>
-            <input type="email" id="fp-email" class="custom-input" placeholder="Enter your Gmail">
+            <p style="font-size: 11px; color: #9ca3af;">Enter your registered Gmail to view your ID and receive a reset link.</p>
+            <input type="email" id="fp-email" class="custom-input" placeholder="Enter your Gmail" oninput="lookupUserIdByEmail(this.value, 'fp-id-preview')">
+            <div id="fp-id-preview" style="font-size:11px; font-weight:bold; color:var(--accent-green); margin:-4px 0 6px 2px;"></div>
             <button class="action-btn" style="width:100%; margin-top:10px; background:linear-gradient(135deg, #f59e0b, #d97706);" onclick="sendPasswordResetLink()">Send Reset Link</button>
         </div>
     </div>
 
-    <!-- MASTER ADMIN CMS MODAL -->
+    <!-- MASTER ADMIN CMS MODAL (With Broadcast Message & Referral Config) -->
     <div id="admin-panel-modal" class="modal-overlay">
         <div class="modal-box" style="max-width:650px;">
             <button class="modal-close" onclick="closeModal('admin-panel-modal')">✕</button>
-            <h3 style="color: var(--danger); margin-top:0;">🔐 Master Admin CMS - Individual Link Save</h3>
+            <h3 style="color: var(--danger); margin-top:0;">🔐 Master Admin CMS - Ecosystem Control</h3>
             
             <div style="background:#030712; padding:12px; border-radius:8px; border:1px solid #1f2937; margin-bottom:12px;">
                 <span style="font-size:12px; font-weight:bold; color:var(--gold);">Change Admin Security Password:</span>
@@ -358,10 +390,17 @@
                 <button class="action-btn" style="background:linear-gradient(135deg, #f59e0b, #d97706); width:100%; margin-top:5px;" onclick="updateAdminPassword()">Update Admin Password</button>
             </div>
 
+            <!-- BROADCAST MESSAGE EDITOR -->
+            <div style="background:#030712; padding:12px; border-radius:8px; border:1px solid #1f2937; margin-bottom:12px;">
+                <p style="font-size:12px; font-weight:bold; color:var(--primary-sky); margin-top:0;">📢 Broadcast Notice Message Editor (Max 150 words):</p>
+                <textarea id="admin-broadcast-input" class="custom-input" style="height:70px; resize:vertical;" placeholder="Write important broadcast notice here..." onchange="saveBroadcastCMS()"></textarea>
+                <button class="action-btn signup-theme" style="width:100%; margin-top:5px;" onclick="saveBroadcastCMS()">Save Broadcast Message</button>
+            </div>
+
             <hr style="border-color:#1f2937; margin:15px 0;">
 
             <p style="font-size:12px; font-weight:bold; color:var(--accent-green);">Select Active Sign-Up Bonus Token (Choose 1) & Set Amount:</p>
-            <div id="admin-tokens-container" style="max-height:180px; overflow-y:auto; display:flex; flex-direction:column; gap:6px; margin-bottom:15px; background:#030712; padding:10px; border-radius:6px; border:1px solid #1f2937;"></div>
+            <div id="admin-tokens-container" style="max-height:160px; overflow-y:auto; display:flex; flex-direction:column; gap:6px; margin-bottom:15px; background:#030712; padding:10px; border-radius:6px; border:1px solid #1f2937;"></div>
 
             <!-- DIRECT REFERRAL SPONSOR BONUS CONFIGURATION SECTION -->
             <div style="background:#030712; padding:12px; border-radius:8px; border:1px solid #1f2937; margin-bottom:15px;">
@@ -377,7 +416,7 @@
             </div>
 
             <p style="font-size:12px; font-weight:bold; color:var(--primary-sky);">GitHub Links for 14 Preview Buttons & Dashboard Home (Each has individual Save button):</p>
-            <div id="admin-links-container" style="max-height:220px; overflow-y:auto; display:flex; flex-direction:column; gap:8px;"></div>
+            <div id="admin-links-container" style="max-height:200px; overflow-y:auto; display:flex; flex-direction:column; gap:8px;"></div>
         </div>
     </div>
 
@@ -423,7 +462,10 @@
             setTimeout(() => {
                 const splash = document.getElementById('splash-screen');
                 splash.style.opacity = '0';
-                setTimeout(() => { splash.style.display = 'none'; }, 1500);
+                setTimeout(() => { 
+                    splash.style.display = 'none'; 
+                    checkAndShowBroadcast(); // Show broadcast popup after splash
+                }, 1500);
             }, 8000);
         });
 
@@ -452,7 +494,8 @@
         let adminData = { 
             links: {}, 
             tokensConfig: { selectedToken: "SKY", tokenAmount: 100 },
-            referralConfig: { token: "SKY", amount: 50 }
+            referralConfig: { token: "SKY", amount: 50 },
+            broadcastMessage: "Welcome to MGSML Sky Project! Explore our 20 tokens, multi-tier referral rewards, and global ecosystem securely."
         };
         let failedAttempts = 0;
         let isLockedOut = false;
@@ -469,10 +512,36 @@
                         openProfileDetailsModal();
                         return;
                     }
+                    if (btnName === "Broadcast") {
+                        showBroadcastWithAnimation(adminData.broadcastMessage || "No broadcast notice available.");
+                        return;
+                    }
                     alert("Welcome to MGSML Sky Project - " + btnName);
                 };
                 workspace.appendChild(pill);
             });
+        }
+
+        // AUTO LOOKUP USER ID WHEN TYPING GMAIL IN SIGN-IN OR FORGOT PASSWORD
+        async function lookupUserIdByEmail(emailInput, previewElementId) {
+            const previewEl = document.getElementById(previewElementId);
+            const email = emailInput.trim();
+            if (!email || email.length < 5) {
+                previewEl.innerText = "";
+                return;
+            }
+
+            try {
+                const snap = await db.collection("users").where("email", "==", email).get();
+                if (!snap.empty) {
+                    const userData = snap.docs[0].data();
+                    previewEl.innerText = `✔ Found ID: ${userData.userId} (${userData.name})`;
+                } else {
+                    previewEl.innerText = "";
+                }
+            } catch (e) {
+                previewEl.innerText = "";
+            }
         }
 
         function handleBrandClick(event) {
@@ -562,11 +631,15 @@
                     if(!adminData.referralConfig) {
                         adminData.referralConfig = { token: "SKY", amount: 50 };
                     }
+                    if(!adminData.broadcastMessage) {
+                        adminData.broadcastMessage = "Welcome to MGSML Sky Project! Explore our 20 tokens securely.";
+                    }
                 } else {
                     adminData = { 
                         links: {}, 
                         tokensConfig: { selectedToken: "SKY", tokenAmount: 100 },
-                        referralConfig: { token: "SKY", amount: 50 }
+                        referralConfig: { token: "SKY", amount: 50 },
+                        broadcastMessage: "Welcome to MGSML Sky Project! Explore our 20 tokens securely."
                     };
                 }
                 renderAdminInputs();
@@ -574,6 +647,11 @@
         }
 
         function renderAdminInputs() {
+            const broadcastInput = document.getElementById('admin-broadcast-input');
+            if(broadcastInput && adminData.broadcastMessage) {
+                broadcastInput.value = adminData.broadcastMessage;
+            }
+
             const tokenContainer = document.getElementById('admin-tokens-container');
             if (tokenContainer) {
                 tokenContainer.innerHTML = '';
@@ -594,7 +672,6 @@
                 });
             }
 
-            // Render Referral Token Dropdown & Amount
             const refSelect = document.getElementById('admin-ref-token-select');
             const refAmountInput = document.getElementById('admin-ref-amount-input');
             if (refSelect && refAmountInput) {
@@ -627,6 +704,18 @@
                     `;
                     linkContainer.appendChild(div);
                 });
+            }
+        }
+
+        async function saveBroadcastCMS() {
+            const msg = document.getElementById('admin-broadcast-input').value.trim();
+            if(!msg) { alert("Please enter broadcast message!"); return; }
+            adminData.broadcastMessage = msg;
+            try {
+                await db.collection("settings").doc("admin_cms").set(adminData, { merge: true });
+                alert("✔ Broadcast message saved successfully!");
+            } catch(e) {
+                alert("Error saving broadcast message.");
             }
         }
 
@@ -674,6 +763,37 @@
             try {
                 await db.collection("settings").doc("admin_cms").set(adminData, { merge: true });
             } catch (e) {}
+        }
+
+        // SHOW BROADCAST POPUP WITH WORD DROP ANIMATION
+        function checkAndShowBroadcast() {
+            const msg = adminData.broadcastMessage || "Welcome to MGSML Sky Project!";
+            showBroadcastWithAnimation(msg);
+        }
+
+        function showBroadcastWithAnimation(messageText) {
+            const container = document.getElementById('broadcast-content-area');
+            container.innerHTML = '';
+            
+            const words = messageText.split(' ');
+            words.forEach((word, index) => {
+                const span = document.createElement('span');
+                span.className = 'broadcast-word';
+                span.innerText = word;
+                span.style.animationDelay = `${index * 0.05}s`;
+                // Colorful random highlight for visual richness
+                if(index % 3 === 0) span.style.color = '#38bdf8';
+                else if(index % 3 === 1) span.style.color = '#10b981';
+                else span.style.color = '#f59e0b';
+                
+                container.appendChild(span);
+            });
+
+            openModal('broadcast-modal');
+        }
+
+        function closeBroadcastModal() {
+            closeModal('broadcast-modal');
         }
 
         async function handleEnterHomeClick() {
@@ -741,7 +861,6 @@
             if (/^\d+$/.test(rawSponsor)) { rawSponsor = "MGSML" + rawSponsor; }
 
             try {
-                // ১. স্পন্সর আইডি ভেরিফিকেশন
                 const sponsorRef = db.collection("users").doc(rawSponsor);
                 const sponsorDoc = await sponsorRef.get();
                 if (!sponsorDoc.exists) {
@@ -751,11 +870,9 @@
                 const sponsorData = sponsorDoc.data();
                 const sponsorName = sponsorData.name || 'Member';
 
-                // ২. নতুন ইউজারের ফায়ারবেস অথ তৈরি
                 const userCredential = await auth.createUserWithEmailAndPassword(email, password);
                 await userCredential.user.sendEmailVerification();
 
-                // ৩. ইউনিক আইডি জেনারেট করা
                 const counterRef = db.collection("settings").doc("id_counter");
                 let newUserIdNum = 2000;
                 await db.runTransaction(async (transaction) => {
@@ -767,7 +884,6 @@
                 let bonusTokenName = "SKY";
                 let bonusAmount = 100;
 
-                // অ্যাডমিন কনফিগারেশন ফেচ করা
                 let refBonusToken = "SKY";
                 let refBonusAmount = 50;
                 try {
@@ -787,7 +903,6 @@
 
                 const userId = "MGSML" + newUserIdNum;
 
-                // নতুন ইউজারের ওয়ালেট ইনিশিয়ালাইজেশন
                 let initialWallets = {};
                 globalTokens.forEach(tk => {
                     initialWallets[tk] = (tk === bonusTokenName || tk === "SKY") ? Number(bonusAmount) : 0;
@@ -803,10 +918,8 @@
                     lastActive: new Date().toISOString()
                 };
 
-                // ৪. নতুন ইউজার সেভ করা
                 await db.collection("users").doc(userId).set(finalRecord);
 
-                // ৫. **অ্যাডমিন প্যানেল নিয়ন্ত্রিত স্পন্সর রেফারাল বোনাস প্রদান**
                 const sponsorWallets = sponsorData.wallets || {};
                 let currentSponsorRefBal = sponsorWallets[refBonusToken] !== undefined ? Number(sponsorWallets[refBonusToken]) : 0;
                 currentSponsorRefBal += Number(refBonusAmount);
