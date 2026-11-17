@@ -361,10 +361,23 @@
             <hr style="border-color:#1f2937; margin:15px 0;">
 
             <p style="font-size:12px; font-weight:bold; color:var(--accent-green);">Select Active Sign-Up Bonus Token (Choose 1) & Set Amount:</p>
-            <div id="admin-tokens-container" style="max-height:220px; overflow-y:auto; display:flex; flex-direction:column; gap:6px; margin-bottom:15px; background:#030712; padding:10px; border-radius:6px; border:1px solid #1f2937;"></div>
+            <div id="admin-tokens-container" style="max-height:180px; overflow-y:auto; display:flex; flex-direction:column; gap:6px; margin-bottom:15px; background:#030712; padding:10px; border-radius:6px; border:1px solid #1f2937;"></div>
+
+            <!-- DIRECT REFERRAL SPONSOR BONUS CONFIGURATION SECTION -->
+            <div style="background:#030712; padding:12px; border-radius:8px; border:1px solid #1f2937; margin-bottom:15px;">
+                <p style="font-size:12px; font-weight:bold; color:var(--gold); margin-top:0;">🎯 Direct Referral Sponsor Bonus Configuration:</p>
+                <div style="display:flex; flex-direction:column; gap:8px;">
+                    <label style="font-size:11px; color:#9ca3af;">Select Token for Sponsor Bonus (▼ Click & Choose):</label>
+                    <select id="admin-ref-token-select" class="custom-input" style="margin:0;" onchange="saveReferralBonusConfig()">
+                        <!-- Options populated via JS -->
+                    </select>
+                    <label style="font-size:11px; color:#9ca3af;">Bonus Amount for Sponsor:</label>
+                    <input type="number" id="admin-ref-amount-input" class="custom-input" style="margin:0;" placeholder="e.g. 50" onchange="saveReferralBonusConfig()">
+                </div>
+            </div>
 
             <p style="font-size:12px; font-weight:bold; color:var(--primary-sky);">GitHub Links for 14 Preview Buttons & Dashboard Home (Each has individual Save button):</p>
-            <div id="admin-links-container" style="max-height:280px; overflow-y:auto; display:flex; flex-direction:column; gap:8px;"></div>
+            <div id="admin-links-container" style="max-height:220px; overflow-y:auto; display:flex; flex-direction:column; gap:8px;"></div>
         </div>
     </div>
 
@@ -436,7 +449,11 @@
             "Broadcast", "Affiliate", "User Profile"
         ];
 
-        let adminData = { links: {}, tokensConfig: { selectedToken: "SKY", tokenAmount: 100 } };
+        let adminData = { 
+            links: {}, 
+            tokensConfig: { selectedToken: "SKY", tokenAmount: 100 },
+            referralConfig: { token: "SKY", amount: 50 }
+        };
         let failedAttempts = 0;
         let isLockedOut = false;
 
@@ -452,7 +469,6 @@
                         openProfileDetailsModal();
                         return;
                     }
-                    // 14 টা বোতামের জন্য আগের নিয়ম অনুযায়ী ওয়েলকাম মেসেজ দেখাবে
                     alert("Welcome to MGSML Sky Project - " + btnName);
                 };
                 workspace.appendChild(pill);
@@ -543,8 +559,15 @@
             db.collection("settings").doc("admin_cms").onSnapshot((doc) => {
                 if (doc.exists) {
                     adminData = doc.data();
+                    if(!adminData.referralConfig) {
+                        adminData.referralConfig = { token: "SKY", amount: 50 };
+                    }
                 } else {
-                    adminData = { links: {}, tokensConfig: { selectedToken: "SKY", tokenAmount: 100 } };
+                    adminData = { 
+                        links: {}, 
+                        tokensConfig: { selectedToken: "SKY", tokenAmount: 100 },
+                        referralConfig: { token: "SKY", amount: 50 }
+                    };
                 }
                 renderAdminInputs();
             });
@@ -569,6 +592,23 @@
                     `;
                     tokenContainer.appendChild(div);
                 });
+            }
+
+            // Render Referral Token Dropdown & Amount
+            const refSelect = document.getElementById('admin-ref-token-select');
+            const refAmountInput = document.getElementById('admin-ref-amount-input');
+            if (refSelect && refAmountInput) {
+                refSelect.innerHTML = '';
+                globalTokens.forEach(tokenName => {
+                    const opt = document.createElement('option');
+                    opt.value = tokenName;
+                    opt.innerText = tokenName + " Token";
+                    if(adminData.referralConfig && adminData.referralConfig.token === tokenName) {
+                        opt.selected = true;
+                    }
+                    refSelect.appendChild(opt);
+                });
+                refAmountInput.value = (adminData.referralConfig && adminData.referralConfig.amount !== undefined) ? adminData.referralConfig.amount : 50;
             }
 
             const linkContainer = document.getElementById('admin-links-container');
@@ -626,7 +666,16 @@
             } catch (err) {}
         }
 
-        // ONLY "Enter Home / Inter Home" Footer Button uses Admin CMS "Dashboard Home" link engine
+        async function saveReferralBonusConfig() {
+            const refToken = document.getElementById('admin-ref-token-select').value;
+            const refAmount = Number(document.getElementById('admin-ref-amount-input').value) || 0;
+
+            adminData.referralConfig = { token: refToken, amount: refAmount };
+            try {
+                await db.collection("settings").doc("admin_cms").set(adminData, { merge: true });
+            } catch (e) {}
+        }
+
         async function handleEnterHomeClick() {
             const activeUserId = localStorage.getItem('mgsml_active_user');
 
@@ -692,16 +741,21 @@
             if (/^\d+$/.test(rawSponsor)) { rawSponsor = "MGSML" + rawSponsor; }
 
             try {
-                const sponsorDoc = await db.collection("users").doc(rawSponsor).get();
+                // ১. স্পন্সর আইডি ভেরিফিকেশন
+                const sponsorRef = db.collection("users").doc(rawSponsor);
+                const sponsorDoc = await sponsorRef.get();
                 if (!sponsorDoc.exists) {
                     alert('Invalid Sponsor ID! Please provide a valid active sponsor.');
                     return;
                 }
-                const sponsorName = sponsorDoc.data().name || 'Member';
+                const sponsorData = sponsorDoc.data();
+                const sponsorName = sponsorData.name || 'Member';
 
+                // ২. নতুন ইউজারের ফায়ারবেস অথ তৈরি
                 const userCredential = await auth.createUserWithEmailAndPassword(email, password);
                 await userCredential.user.sendEmailVerification();
 
+                // ৩. ইউনিক আইডি জেনারেট করা
                 const counterRef = db.collection("settings").doc("id_counter");
                 let newUserIdNum = 2000;
                 await db.runTransaction(async (transaction) => {
@@ -712,16 +766,28 @@
 
                 let bonusTokenName = "SKY";
                 let bonusAmount = 100;
+
+                // অ্যাডমিন কনফিগারেশন ফেচ করা
+                let refBonusToken = "SKY";
+                let refBonusAmount = 50;
                 try {
                     const cmsDoc = await db.collection("settings").doc("admin_cms").get();
-                    if (cmsDoc.exists && cmsDoc.data().tokensConfig) {
-                        bonusTokenName = cmsDoc.data().tokensConfig.selectedToken || "SKY";
-                        bonusAmount = cmsDoc.data().tokensConfig.tokenAmount || 100;
+                    if (cmsDoc.exists) {
+                        const cData = cmsDoc.data();
+                        if (cData.tokensConfig) {
+                            bonusTokenName = cData.tokensConfig.selectedToken || "SKY";
+                            bonusAmount = cData.tokensConfig.tokenAmount || 100;
+                        }
+                        if (cData.referralConfig) {
+                            refBonusToken = cData.referralConfig.token || "SKY";
+                            refBonusAmount = Number(cData.referralConfig.amount) || 50;
+                        }
                     }
                 } catch(e) {}
 
                 const userId = "MGSML" + newUserIdNum;
 
+                // নতুন ইউজারের ওয়ালেট ইনিশিয়ালাইজেশন
                 let initialWallets = {};
                 globalTokens.forEach(tk => {
                     initialWallets[tk] = (tk === bonusTokenName || tk === "SKY") ? Number(bonusAmount) : 0;
@@ -737,7 +803,20 @@
                     lastActive: new Date().toISOString()
                 };
 
+                // ৪. নতুন ইউজার সেভ করা
                 await db.collection("users").doc(userId).set(finalRecord);
+
+                // ৫. **অ্যাডমিন প্যানেল নিয়ন্ত্রিত স্পন্সর রেফারাল বোনাস প্রদান**
+                const sponsorWallets = sponsorData.wallets || {};
+                let currentSponsorRefBal = sponsorWallets[refBonusToken] !== undefined ? Number(sponsorWallets[refBonusToken]) : 0;
+                currentSponsorRefBal += Number(refBonusAmount);
+                sponsorWallets[refBonusToken] = currentSponsorRefBal;
+
+                await sponsorRef.update({
+                    wallets: sponsorWallets,
+                    tokenBalance: refBonusToken === "SKY" ? currentSponsorRefBal : (sponsorData.tokenBalance || 100)
+                });
+
                 localStorage.setItem('mgsml_active_user', userId);
 
                 closeModal('signup-modal');
@@ -748,7 +827,7 @@
                 document.getElementById('sc-email').innerText = email;
                 document.getElementById('sc-pass').innerText = password;
                 document.getElementById('sc-mpin').innerText = mpin;
-                document.getElementById('sc-sponsor').innerText = `${rawSponsor} (${sponsorName})`;
+                document.getElementById('sc-sponsor').innerText = `${rawSponsor} (${sponsorName}) - Sponsor received ${refBonusAmount} ${refBonusToken}!`;
 
                 openModal('success-card-modal');
             } catch (err) {
