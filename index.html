@@ -212,20 +212,22 @@
             align-items: center; justify-content: center;
         }
 
-        /* BROADCAST POPUP STYLING (400-500px Floating Card with Drop-in Words & Shadow) */
+        /* BROADCAST CARD: WHITE BG, FULL WIDTH, LARGE HEIGHT & STRAIGHT ALIGNED TEXT */
         .broadcast-card {
-            background: linear-gradient(135deg, #0f172a, #111827, #1e293b);
-            border: 2.5px solid var(--primary-sky);
-            box-shadow: 0 0 40px rgba(56, 189, 248, 0.5), inset 0 0 20px rgba(56, 189, 248, 0.2);
-            width: 90%; max-width: 450px; min-height: 280px; max-height: 85vh;
-            border-radius: 16px; padding: 25px; box-sizing: border-box;
+            background: #ffffff;
+            color: #0f172a;
+            border: 3px solid #0284c7;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+            width: 94%; max-width: 520px; 
+            height: 420px; max-height: 85vh;
+            border-radius: 20px; padding: 25px; box-sizing: border-box;
             display: flex; flex-direction: column; justify-content: space-between; align-items: center;
-            text-align: center; position: relative; overflow: hidden;
+            text-align: left; position: relative; overflow: hidden;
         }
         .broadcast-word {
-            display: inline-block; opacity: 0; transform: translateY(-30px);
-            animation: dropWord 0.4s forwards; font-weight: 700; text-shadow: 0 2px 8px rgba(0,0,0,0.6);
-            margin-right: 5px;
+            display: inline-block; opacity: 0; transform: translateY(-20px);
+            animation: dropWord 0.35s forwards; font-weight: 600; font-size: 15px; line-height: 1.7;
+            margin-right: 4px; color: #1e293b;
         }
         @keyframes dropWord {
             to { opacity: 1; transform: translateY(0); }
@@ -247,14 +249,14 @@
         </audio>
     </div>
 
-    <!-- BROADCAST POPUP MODAL (Appears after splash screen) -->
+    <!-- BROADCAST POPUP MODAL (White Board with Full Width & Height) -->
     <div id="broadcast-modal" class="modal-overlay">
         <div class="broadcast-card">
-            <h3 style="color: var(--primary-sky); margin-top:0; font-size:18px; text-transform:uppercase; text-shadow: 0 0 15px rgba(56,189,248,0.8);">📢 MGSML Broadcast Notice</h3>
-            <div id="broadcast-content-area" style="font-size:14px; color:#f1f5f9; line-height:1.6; margin:15px 0; max-height:180px; overflow-y:auto; width:100%;">
+            <h3 style="color: #0284c7; margin-top:0; font-size:18px; font-weight:900; text-transform:uppercase; text-align:center; width:100%; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px;">📢 MGSML Broadcast Notice</h3>
+            <div id="broadcast-content-area" style="font-size:14px; color:#1e293b; line-height:1.7; margin:10px 0; flex:1; overflow-y:auto; width:100%; text-align:left; font-weight:600; padding: 5px;">
                 <!-- Dynamic dropped words will appear here -->
             </div>
-            <button class="action-btn signup-theme" style="width:100%; padding:10px; font-size:12px;" onclick="closeBroadcastModal()">Got It / Enter App</button>
+            <button class="action-btn signup-theme" style="width:100%; padding:12px; font-size:13px; font-weight:900; text-align:center;" onclick="closeBroadcastModal()">Got It / Enter App</button>
         </div>
     </div>
 
@@ -392,8 +394,8 @@
 
             <!-- BROADCAST MESSAGE EDITOR -->
             <div style="background:#030712; padding:12px; border-radius:8px; border:1px solid #1f2937; margin-bottom:12px;">
-                <p style="font-size:12px; font-weight:bold; color:var(--primary-sky); margin-top:0;">📢 Broadcast Notice Message Editor (Max 150 words):</p>
-                <textarea id="admin-broadcast-input" class="custom-input" style="height:70px; resize:vertical;" placeholder="Write important broadcast notice here..." onchange="saveBroadcastCMS()"></textarea>
+                <p style="font-size:12px; font-weight:bold; color:var(--primary-sky); margin-top:0;">📢 Broadcast Notice Message Editor:</p>
+                <textarea id="admin-broadcast-input" class="custom-input" style="height:80px; resize:vertical;" placeholder="Write important broadcast notice here..." onchange="saveBroadcastCMS()"></textarea>
                 <button class="action-btn signup-theme" style="width:100%; margin-top:5px;" onclick="saveBroadcastCMS()">Save Broadcast Message</button>
             </div>
 
@@ -411,7 +413,7 @@
                         <!-- Options populated via JS -->
                     </select>
                     <label style="font-size:11px; color:#9ca3af;">Bonus Amount for Sponsor:</label>
-                    <input type="number" id="admin-ref-amount-input" class="custom-input" style="margin:0;" placeholder="e.g. 50" onchange="saveReferralBonusConfig()">
+                    <input type="number" id="admin-ref-amount-input" class="custom-input" style="margin:0;" placeholder="e.g. 100" onchange="saveReferralBonusConfig()">
                 </div>
             </div>
 
@@ -493,9 +495,9 @@
 
         let adminData = { 
             links: {}, 
-            tokensConfig: { selectedToken: "SKY", tokenAmount: 100 },
-            referralConfig: { token: "SKY", amount: 50 },
-            broadcastMessage: "Welcome to MGSML Sky Project! Explore our 20 tokens, multi-tier referral rewards, and global ecosystem securely."
+            tokensConfig: { selectedToken: "SKY", tokenAmount: 500 },
+            referralConfig: { token: "SKY", amount: 100 },
+            broadcastMessage: "Welcome to MGSML Sky Project! Sign up now to receive 500 SKY Tokens instantly in your wallet, and earn 100 Tokens for every direct referral. Upcoming token launches include JKR (Joker) and BULT (Bullish) tokens. Make sure to keep your 3-hour mining sessions continuous without interruption. All ecosystem tokens are scheduled for global exchange listing between 2027 and 2028."
         };
         let failedAttempts = 0;
         let isLockedOut = false;
@@ -522,7 +524,6 @@
             });
         }
 
-        // AUTO LOOKUP USER ID WHEN TYPING GMAIL IN SIGN-IN OR FORGOT PASSWORD
         async function lookupUserIdByEmail(emailInput, previewElementId) {
             const previewEl = document.getElementById(previewElementId);
             const email = emailInput.trim();
@@ -629,17 +630,17 @@
                 if (doc.exists) {
                     adminData = doc.data();
                     if(!adminData.referralConfig) {
-                        adminData.referralConfig = { token: "SKY", amount: 50 };
+                        adminData.referralConfig = { token: "SKY", amount: 100 };
                     }
                     if(!adminData.broadcastMessage) {
-                        adminData.broadcastMessage = "Welcome to MGSML Sky Project! Explore our 20 tokens securely.";
+                        adminData.broadcastMessage = "Welcome to MGSML Sky Project! Sign up now to receive 500 SKY Tokens instantly in your wallet, and earn 100 Tokens for every direct referral.";
                     }
                 } else {
                     adminData = { 
                         links: {}, 
-                        tokensConfig: { selectedToken: "SKY", tokenAmount: 100 },
-                        referralConfig: { token: "SKY", amount: 50 },
-                        broadcastMessage: "Welcome to MGSML Sky Project! Explore our 20 tokens securely."
+                        tokensConfig: { selectedToken: "SKY", tokenAmount: 500 },
+                        referralConfig: { token: "SKY", amount: 100 },
+                        broadcastMessage: "Welcome to MGSML Sky Project! Sign up now to receive 500 SKY Tokens instantly in your wallet, and earn 100 Tokens for every direct referral."
                     };
                 }
                 renderAdminInputs();
@@ -657,7 +658,7 @@
                 tokenContainer.innerHTML = '';
                 globalTokens.forEach(tokenName => {
                     const isSelected = (adminData.tokensConfig && adminData.tokensConfig.selectedToken === tokenName);
-                    const currentAmt = (isSelected && adminData.tokensConfig.tokenAmount) ? adminData.tokensConfig.tokenAmount : 100;
+                    const currentAmt = (isSelected && adminData.tokensConfig.tokenAmount) ? adminData.tokensConfig.tokenAmount : 500;
                     
                     const div = document.createElement('div');
                     div.style.cssText = "display:flex; align-items:center; justify-content:space-between; gap:8px;";
@@ -685,7 +686,7 @@
                     }
                     refSelect.appendChild(opt);
                 });
-                refAmountInput.value = (adminData.referralConfig && adminData.referralConfig.amount !== undefined) ? adminData.referralConfig.amount : 50;
+                refAmountInput.value = (adminData.referralConfig && adminData.referralConfig.amount !== undefined) ? adminData.referralConfig.amount : 100;
             }
 
             const linkContainer = document.getElementById('admin-links-container');
@@ -736,7 +737,7 @@
 
         async function saveTokenConfig() {
             let selectedTk = "SKY";
-            let tkAmt = 100;
+            let tkAmt = 500;
 
             globalTokens.forEach(tokenName => {
                 const radio = document.getElementById('radio-' + safeId(tokenName));
@@ -765,7 +766,6 @@
             } catch (e) {}
         }
 
-        // SHOW BROADCAST POPUP WITH WORD DROP ANIMATION
         function checkAndShowBroadcast() {
             const msg = adminData.broadcastMessage || "Welcome to MGSML Sky Project!";
             showBroadcastWithAnimation(msg);
@@ -779,13 +779,8 @@
             words.forEach((word, index) => {
                 const span = document.createElement('span');
                 span.className = 'broadcast-word';
-                span.innerText = word;
-                span.style.animationDelay = `${index * 0.05}s`;
-                // Colorful random highlight for visual richness
-                if(index % 3 === 0) span.style.color = '#38bdf8';
-                else if(index % 3 === 1) span.style.color = '#10b981';
-                else span.style.color = '#f59e0b';
-                
+                span.innerText = word + " ";
+                span.style.animationDelay = `${index * 0.03}s`;
                 container.appendChild(span);
             });
 
@@ -882,21 +877,21 @@
                 });
 
                 let bonusTokenName = "SKY";
-                let bonusAmount = 100;
+                let bonusAmount = 500;
 
                 let refBonusToken = "SKY";
-                let refBonusAmount = 50;
+                let refBonusAmount = 100;
                 try {
                     const cmsDoc = await db.collection("settings").doc("admin_cms").get();
                     if (cmsDoc.exists) {
                         const cData = cmsDoc.data();
                         if (cData.tokensConfig) {
                             bonusTokenName = cData.tokensConfig.selectedToken || "SKY";
-                            bonusAmount = cData.tokensConfig.tokenAmount || 100;
+                            bonusAmount = cData.tokensConfig.tokenAmount || 500;
                         }
                         if (cData.referralConfig) {
                             refBonusToken = cData.referralConfig.token || "SKY";
-                            refBonusAmount = Number(cData.referralConfig.amount) || 50;
+                            refBonusAmount = Number(cData.referralConfig.amount) || 100;
                         }
                     }
                 } catch(e) {}
@@ -927,13 +922,14 @@
 
                 await sponsorRef.update({
                     wallets: sponsorWallets,
-                    tokenBalance: refBonusToken === "SKY" ? currentSponsorRefBal : (sponsorData.tokenBalance || 100)
+                    tokenBalance: refBonusToken === "SKY" ? currentSponsorRefBal : (sponsorData.tokenBalance || 500)
                 });
 
                 localStorage.setItem('mgsml_active_user', userId);
 
                 closeModal('signup-modal');
 
+                // নিশ্চিত করা হলো যে পপআপ কার্ডে নতুন ইউজারের নিজের জেনারেটেড আইডি ও তথ্যই শো করবে
                 document.getElementById('sc-userid').innerText = userId;
                 document.getElementById('sc-name').innerText = name;
                 document.getElementById('sc-phone').innerText = phone;
